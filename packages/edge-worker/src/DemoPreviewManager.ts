@@ -34,11 +34,12 @@ export class DemoPreviewManager {
 				const body = request.body as {
 					issueId?: string;
 					worktreePath?: string;
-					startCommand?: string;
 				} | null;
 				const issueId = body?.issueId;
 				const worktreePath = body?.worktreePath;
-				const startCommand = body?.startCommand;
+				// startCommand is never accepted from the request — always auto-detected
+				// to prevent arbitrary command execution (RCE)
+				const startCommand = undefined;
 
 				if (!issueId || !worktreePath) {
 					return reply
