@@ -3,9 +3,10 @@
  */
 
 /**
- * Default server port for OAuth callbacks and webhooks
+ * Default server port for OAuth callbacks and webhooks.
+ * Azure App Service sets PORT automatically — check it as fallback.
  */
-export const DEFAULT_SERVER_PORT = 3456;
+export const DEFAULT_SERVER_PORT = parseInt(process.env.PORT || "3456", 10);
 
 /**
  * Parse a port number from string with validation
