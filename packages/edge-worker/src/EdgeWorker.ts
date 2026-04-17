@@ -130,6 +130,7 @@ import { LiveChatRepositoryProvider } from "./ChatRepositoryProvider.js";
 import { ChatSessionHandler } from "./ChatSessionHandler.js";
 import { ConfigManager, type RepositoryChanges } from "./ConfigManager.js";
 import { DefaultSkillsDeployer } from "./DefaultSkillsDeployer.js";
+import { DemoPreviewManager } from "./DemoPreviewManager.js";
 import { EgressProxy } from "./EgressProxy.js";
 import { GitService } from "./GitService.js";
 import { GlobalSessionRegistry } from "./GlobalSessionRegistry.js";
@@ -229,6 +230,7 @@ export class EdgeWorker extends EventEmitter {
 	/** Validates webhook source IPs against known provider allowlists */
 	private webhookIpValidator: WebhookIpValidator;
 	/** Egress proxy for sandbox network traffic filtering and header injection */
+	private demoPreviewManager: DemoPreviewManager | null = null;
 	private egressProxy: EgressProxy | null = null;
 	/** Base SDK sandbox settings to pass to ClaudeRunner sessions (set when proxy starts) */
 	private sdkSandboxSettings:
@@ -710,6 +712,12 @@ export class EdgeWorker extends EventEmitter {
 
 		// 5. Register /version endpoint for CLI version info
 		this.registerVersionEndpoint();
+
+		// 6. Register demo preview routes for stakeholder demos
+		this.demoPreviewManager = new DemoPreviewManager(this.logger);
+		this.demoPreviewManager.registerRoutes(
+			this.sharedApplicationServer.getFastifyInstance(),
+		);
 	}
 
 	/**
@@ -2201,6 +2209,11 @@ ${taskSection}`;
 			this.egressProxy = null;
 			this.sdkSandboxSettings = null;
 			this.egressCaCertPath = null;
+		}
+
+		// Stop demo preview manager and kill any running demo processes
+		if (this.demoPreviewManager) {
+			await this.demoPreviewManager.shutdown();
 		}
 
 		// Stop shared application server (this also stops Cloudflare tunnel if running)
